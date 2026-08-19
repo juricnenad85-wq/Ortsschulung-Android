@@ -1,4 +1,4 @@
-<!doctype html>
+l<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -932,28 +932,14 @@ function showStationSuggestions(){
   }
 
   $('station').addEventListener('input',()=>{
-  $('gpsAutoState').textContent='TEST: Eingabe erkannt';
-  showStationSuggestions();
-  renderQuickStations();
+  const typed=$('station').value.trim();
 
-  clearTimeout(stationDebounce);
-  stationDebounce=setTimeout(()=>{
-    const input=$('station');
-    const typed=input.value.trim();
+  $('gpsAutoState').textContent='TEST läuft: '+typed;
 
-    if(typed.length<3) return;
-
-    const exact=stationNames().find(
-      n=>n.toLowerCase()===typed.toLowerCase()
-    );
-
-    findStationGPS(exact || typed);
-  },1100);
+  if(typed.length>=3){
+    findStationGPS(typed);
+  }
 });
-
-
-$('station').addEventListener('focus',showStationSuggestions);
-$('station').addEventListener('blur',()=>setTimeout(()=>$('stationSuggestions').style.display='none',180));
 
 
 $('trainingDate').value=localISO();
