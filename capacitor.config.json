@@ -1,0 +1,8 @@
+{
+  "appId": "at.swietelsky.ortsschulung",
+  "appName": "Ortsschulung",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
