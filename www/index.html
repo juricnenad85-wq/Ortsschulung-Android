@@ -690,8 +690,8 @@ async function findStationGPS(stationName){
 
   try{
     const urls=[
-      'https://api.openrailwaymap.org/v2/facility?name='+encodeURIComponent(station)+'&limit=10',
-      'https://openrailwaymap.app/api/facility?name='+encodeURIComponent(station)+'&limit=10'
+      'https://api.openrailwaymap.org/v2/facility?q='+encodeURIComponent(station)+'&limit=10',
+      'https://openrailwaymap.app/api/facility?q='+encodeURIComponent(station)+'&limit=10'
     ];
     let data=null,lastError=null;
     for(const url of urls){
