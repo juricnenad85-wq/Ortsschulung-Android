@@ -931,19 +931,26 @@ function showStationSuggestions(){
     });
   }
 
+  $('station').addEventListener('input',()=>{
+  showStationSuggestions();
+  renderQuickStations();
+
+  clearTimeout(stationDebounce);
   stationDebounce=setTimeout(()=>{
-  const typed=input.value.trim();
-  if(typed.length<3) return;
+    const input=$('station');
+    const typed=input.value.trim();
 
-  const exact=stationNames().find(
-    n=>n.toLowerCase()===typed.toLowerCase()
-  );
+    if(typed.length<3) return;
 
-  findStationGPS(exact || typed);
-},1100);
+    const exact=stationNames().find(
+      n=>n.toLowerCase()===typed.toLowerCase()
+    );
+
+    findStationGPS(exact || typed);
+  },1100);
+});
 
 
-$('station').addEventListener('input',()=>{showStationSuggestions();renderQuickStations();});
 $('station').addEventListener('focus',showStationSuggestions);
 $('station').addEventListener('blur',()=>setTimeout(()=>$('stationSuggestions').style.display='none',180));
 
