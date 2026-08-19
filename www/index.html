@@ -932,6 +932,7 @@ function showStationSuggestions(){
   }
 
   $('station').addEventListener('input',()=>{
+  $('gpsAutoState').textContent='TEST: Eingabe erkannt';
   showStationSuggestions();
   renderQuickStations();
 
