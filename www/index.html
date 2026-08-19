@@ -879,8 +879,9 @@ let stationDebounce=null;
 
 function stationNames(){
   const builtIn=[...$('stationList').options].map(o=>o.value);
+  const extra=['Wien Maxing'];
   const saved=items.map(x=>x.station).filter(Boolean);
-  return [...new Set([...builtIn,...saved])];
+return [...new Set([...builtIn,...extra,...saved])];
 }
 
 function showStationSuggestions(){
