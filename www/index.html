@@ -931,12 +931,17 @@ function showStationSuggestions(){
     });
   }
 
-  clearTimeout(stationDebounce);
   stationDebounce=setTimeout(()=>{
-    const exact=stationNames().find(n=>n.toLowerCase()===input.value.trim().toLowerCase());
-    if(exact) findStationGPS(exact);
-  },650);
-}
+  const typed=input.value.trim();
+  if(typed.length<3) return;
+
+  const exact=stationNames().find(
+    n=>n.toLowerCase()===typed.toLowerCase()
+  );
+
+  findStationGPS(exact || typed);
+},1100);
+
 
 $('station').addEventListener('input',()=>{showStationSuggestions();renderQuickStations();});
 $('station').addEventListener('focus',showStationSuggestions);
