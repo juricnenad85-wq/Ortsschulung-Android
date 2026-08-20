@@ -179,14 +179,38 @@ $('station').addEventListener('input',()=>{
 });
 $('station').addEventListener('focus',renderSuggestions);
 
+function distanceKm(lat1,lon1,lat2,lon2){
+  const R=6371;
+  const rad=v=>v*Math.PI/180;
+  const dLat=rad(lat2-lat1),dLon=rad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function nearestStation(lat,lon){
+  let best=null,bestKm=Infinity;
+  for(const s of STATIONS){
+    const km=distanceKm(lat,lon,Number(s.lat),Number(s.lon));
+    if(km<bestKm){best=s;bestKm=km}
+  }
+  return best?{station:best,km:bestKm}:null;
+}
+
 $('myLocation').addEventListener('click',()=>{
   if(!navigator.geolocation){alert('Standort wird von diesem Gerät nicht unterstützt.');return}
+  $('stationStatus').className='status';
   $('stationStatus').textContent='📍 Standort wird ermittelt …';
+  $('suggestions').style.display='none';
   navigator.geolocation.getCurrentPosition(p=>{
-    $('lat').value=p.coords.latitude.toFixed(6);
-    $('lon').value=p.coords.longitude.toFixed(6);
+    const lat=p.coords.latitude,lon=p.coords.longitude;
+    $('lat').value=lat.toFixed(6);
+    $('lon').value=lon.toFixed(6);
+    $('station').value='';
+    const near=nearestStation(lat,lon);
     $('stationStatus').className='status ok';
-    $('stationStatus').textContent='✓ Dein Standort wurde übernommen.';
+    $('stationStatus').textContent=near
+      ? '✓ Aktueller Standort übernommen. Nächste gespeicherte Betriebsstelle: '+near.station.name+' ('+(near.km<1?Math.round(near.km*1000)+' m':near.km.toFixed(1)+' km')+').'
+      : '✓ Aktueller Standort übernommen.';
   },()=>{
     $('stationStatus').className='status';
     $('stationStatus').textContent='Standort konnte nicht geladen werden.';
