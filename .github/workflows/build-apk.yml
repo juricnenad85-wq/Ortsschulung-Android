@@ -1,45 +1,74 @@
 name: Android APK erstellen
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Projekt laden
+      - name: Repository laden
         uses: actions/checkout@v4
 
-      - name: Node.js installieren
+      - name: Node.js einrichten
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          
 
-      - name: Java installieren
+      - name: Java einrichten
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Pakete installieren
+      - name: Abhängigkeiten installieren
         run: npm install
 
-      - name: Android-Projekt erstellen
-        run: npx cap add android
+      - name: Android-Projekt neu erzeugen
+        run: |
+          rm -rf android
+          npx cap add android
+          npx cap sync android
 
-      - name: Web-App synchronisieren
-        run: npx cap sync android
+      - name: Standortberechtigungen eintragen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: APK erstellen
-        working-directory: android
-        run: chmod +x gradlew && ./gradlew assembleDebug
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text(encoding="utf-8")
 
-      - name: APK bereitstellen
+          permissions = [
+              '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+          ]
+
+          missing = [p for p in permissions if p not in text]
+          if missing:
+              marker = "<application"
+              if marker not in text:
+                  raise SystemExit("AndroidManifest.xml: <application> nicht gefunden")
+              text = text.replace(
+                  marker,
+                  "\n".join(missing) + "\n\n    " + marker,
+                  1
+              )
+              manifest.write_text(text, encoding="utf-8")
+
+          print(manifest.read_text(encoding="utf-8"))
+          PY
+
+      - name: Debug-APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: APK hochladen
         uses: actions/upload-artifact@v4
         with:
           name: Ortsschulung-Android-APK
