@@ -931,15 +931,30 @@ function showStationSuggestions(){
     });
   }
 
-  $('station').addEventListener('input',()=>{
+$('station').addEventListener('input', ()=>{
   const typed=$('station').value.trim();
 
-  $('gpsAutoState').textContent='TEST läuft: '+typed;
+  showStationSuggestions();
+  renderQuickStations();
 
-  if(typed.length>=3){
-    findStationGPS(typed);
+  clearTimeout(stationDebounce);
+
+  if(typed.length<3){
+    $('gpsAutoState').textContent='📍 GPS wird nach Auswahl automatisch geladen.';
+    return;
   }
+
+  stationDebounce=setTimeout(()=>{
+    const exact=stationNames().find(
+      n=>n.toLowerCase()===typed.toLowerCase()
+    );
+
+    if(exact){
+      findStationGPS(exact);
+    }
+  },700);
 });
+
 
 
 $('trainingDate').value=localISO();
