@@ -1,4 +1,4 @@
-l<!doctype html>
+<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -11,7 +11,6 @@ l<!doctype html>
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Ortsschulungen – SWIETELSKY / ÖBB</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{
   --navy:#15253b; --navy2:#203650; --red:#d71920; --orange:#f28c00;
@@ -197,144 +196,6 @@ button,input,textarea{touch-action:manipulation}
 .osFilterBar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
 .osFilterBtn{border:1px solid #d8dde5;background:#fff;color:#172033;border-radius:999px;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}
 .osFilterBtn.active{background:#15253b;color:#fff;border-color:#15253b}
-
-.mobileTrainingCards{display:none}
-@media(max-width:900px){
-  .tableWrap table{display:none}
-  .tableWrap{overflow:visible}
-  .mobileTrainingCards{display:grid;gap:12px;margin-top:12px}
-  .trainingCard{
-    background:#fff;border:1px solid #d8dde5;border-radius:15px;padding:15px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08)
-  }
-  .trainingCardTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
-  .trainingStation{font-size:17px;font-weight:900;line-height:1.25}
-  .trainingMeta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}
-  .trainingMetaBox{background:#f5f7fa;border-radius:10px;padding:9px}
-  .trainingMetaLabel{font-size:10px;color:#6d7786;text-transform:uppercase;letter-spacing:.04em;font-weight:800}
-  .trainingMetaValue{font-size:13px;font-weight:850;margin-top:3px}
-  .trainingGps{font-size:12px;color:#6d7786;margin:9px 0;word-break:break-word}
-  .trainingActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-  .trainingActions .miniBtn{width:100%;min-height:44px}
-  .trainingActions .mapBtn{grid-column:1/-1}
-}
-
-
-/* Gesamtkarte */
-.allMapOverlay{position:fixed;inset:0;background:rgba(10,22,38,.72);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}
-.allMapOverlay.open{display:flex}
-.allMapCard{width:min(980px,100%);height:min(78vh,720px);background:#fff;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column}
-.allMapHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#15253b;color:#fff}
-.allMapHead h2{font-size:20px;margin:0}.allMapClose{border:0;border-radius:12px;background:#fff;color:#15253b;font-weight:800;padding:10px 14px;cursor:pointer}
-#allStationsMap{flex:1;min-height:360px}.allMapInfo{padding:10px 16px;font-size:13px;color:#5e6877;background:#f6f8fb}
-@media(max-width:700px){.allMapOverlay{padding:8px}.allMapCard{height:82vh;border-radius:18px}.allMapHead h2{font-size:17px}#allStationsMap{min-height:300px}}
-
-#printTrainingSheet{display:none}
-@media print{
- body *{visibility:hidden!important}
- #printTrainingSheet,#printTrainingSheet *{visibility:visible!important}
- #printTrainingSheet{display:block!important;position:absolute;left:0;top:0;width:100%;padding:24px;background:#fff;color:#111;font-family:Arial,sans-serif}
- #printTrainingSheet h1{font-size:24px;margin:0 0 6px}
- #printTrainingSheet .pdfSub{font-size:13px;margin-bottom:22px}
- #printTrainingSheet .pdfRow{padding:10px 0;border-bottom:1px solid #ddd}
- #printTrainingSheet .pdfLabel{font-size:11px;font-weight:bold;text-transform:uppercase;margin-bottom:4px}
- #printTrainingSheet .pdfValue{font-size:14px;white-space:pre-wrap}
- #printTrainingSheet .pdfFooter{margin-top:25px;font-size:11px}
-}
-
-/* Komplette Kartenansicht auf dem Handy */
-@media(max-width:900px){
-  .formPanel{
-    background:transparent!important;
-    border:0!important;
-    box-shadow:none!important;
-    padding:0!important;
-  }
-  .formPanel > .panelTitle{
-    background:#fff;
-    border:1px solid #d8dde5;
-    border-radius:15px;
-    padding:14px 15px;
-    margin:0 0 12px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08);
-  }
-  .formPanel > .grid3,
-  .formPanel > .gpsRow,
-  .formPanel > .field,
-  .formPanel > .grid2{
-    background:#fff;
-    border:1px solid #d8dde5;
-    border-radius:15px;
-    padding:14px;
-    margin:0 0 12px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08);
-  }
-  .formPanel > .grid3,
-  .formPanel > .grid2{gap:12px}
-  .formPanel .field{margin-bottom:0}
-  .quickPanel{
-    margin-top:12px;
-    background:#f7f9fc;
-    border-color:#e0e5ec;
-    box-shadow:none;
-  }
-  .gpsRow{display:block!important}
-  .gpsRow > .field + .field{margin-top:10px}
-  .mapTools{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:8px;
-    margin-top:12px;
-  }
-  .mapTools button{width:100%;min-height:46px}
-  .mapBox{background:#f7f9fc}
-
-  .side{display:grid;gap:12px}
-  .sidePanel{margin:0!important}
-  .summaryMobile{gap:8px}
-  .statusBox{
-    border-radius:14px;
-    box-shadow:0 4px 12px rgba(19,36,58,.06);
-  }
-  .note{
-    border-radius:15px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08);
-    margin-top:12px;
-  }
-
-  .overview{
-    background:transparent!important;
-    border:0!important;
-    box-shadow:none!important;
-    padding:0!important;
-  }
-  .osFilterBar{
-    background:#fff;
-    border:1px solid #d8dde5;
-    border-radius:15px;
-    padding:12px;
-    margin:0 0 12px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08);
-  }
-  .overviewHead{
-    background:#fff;
-    border:1px solid #d8dde5;
-    border-radius:15px;
-    padding:14px;
-    margin:0 0 12px;
-    box-shadow:0 5px 16px rgba(19,36,58,.08);
-  }
-  .mobileTrainingCards{margin-top:0}
-  .trainingCard{border-radius:16px}
-
-  /* Aktionen wie eigene Karte */
-  .sidePanel:last-child .actionBtn{border-radius:12px}
-
-  /* Favoriten und zuletzt verwendet ebenfalls als kleine Karten */
-  .favBar{display:grid;grid-template-columns:1fr;gap:7px}
-  .favChip{width:100%;justify-content:flex-start;border-radius:11px}
-}
-
 </style>
 
 <style>
@@ -568,10 +429,7 @@ button,input,textarea{touch-action:manipulation}
         </div>
       </div>
 
-      <div class="note">
-        <div class="noteIcon">i</div>
-        <div><strong>Hinweis</strong><br>Alle mit markierten Felder sind verpflichtend. Die Gültigkeit wird automatisch auf <strong>1 Jahr ab Schulungsdatum</strong> gesetzt.</div>
-      </div>
+
     </section>
 
     <aside class="side">
@@ -617,27 +475,16 @@ button,input,textarea{touch-action:manipulation}
         </thead>
         <tbody id="rows"></tbody>
       </table>
-      <div id="mobileTrainingCards" class="mobileTrainingCards"></div>
       <div id="empty" class="empty">Noch keine Ortsschulungen gespeichert.</div>
     </div>
   </section>
 </main>
-
-
-<div id="allMapOverlay" class="allMapOverlay" onclick="if(event.target===this)closeAllStationsMap()">
-  <div class="allMapCard">
-    <div class="allMapHead"><h2>🗺️ Gesamtkarte meiner Ortsschulungen</h2><button class="allMapClose" type="button" onclick="closeAllStationsMap()">✕ Schließen</button></div>
-    <div id="allStationsMap"></div>
-    <div id="allMapInfo" class="allMapInfo">Gespeicherte Bahnhöfe mit GPS werden auf der Karte angezeigt.</div>
-  </div>
-</div>
 
 <footer>
   <div>ⓘ &nbsp; Gültigkeitsdauer: 1 Jahr ab Schulungsdatum</div>
   <div>Stand: <span id="todayText"></span></div>
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'"></script>
 <script>
 const KEY='ortsschulungen_pro_v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]');
@@ -690,8 +537,8 @@ async function findStationGPS(stationName){
 
   try{
     const urls=[
-      'https://api.openrailwaymap.org/v2/facility?q='+encodeURIComponent(station)+'&limit=10',
-      'https://openrailwaymap.app/api/facility?q='+encodeURIComponent(station)+'&limit=10'
+      'https://api.openrailwaymap.org/v2/facility?name='+encodeURIComponent(station)+'&limit=10',
+      'https://openrailwaymap.app/api/facility?name='+encodeURIComponent(station)+'&limit=10'
     ];
     let data=null,lastError=null;
     for(const url of urls){
@@ -870,7 +717,6 @@ function render(){
       </td>
     </tr>`;
   }).join('');
-  renderMobileTrainingCards(filtered);
 }
 
 $('topics').addEventListener('input',()=>$('counter').textContent=$('topics').value.length);
@@ -879,9 +725,8 @@ let stationDebounce=null;
 
 function stationNames(){
   const builtIn=[...$('stationList').options].map(o=>o.value);
-  const extra=['Wien Maxing'];
   const saved=items.map(x=>x.station).filter(Boolean);
-return [...new Set([...builtIn,...extra,...saved])];
+  return [...new Set([...builtIn,...saved])];
 }
 
 function showStationSuggestions(){
@@ -931,32 +776,16 @@ function showStationSuggestions(){
     });
   }
 
+  clearTimeout(stationDebounce);
+  stationDebounce=setTimeout(()=>{
+    const exact=stationNames().find(n=>n.toLowerCase()===input.value.trim().toLowerCase());
+    if(exact) findStationGPS(exact);
+  },650);
 }
 
-$('station').addEventListener('input', ()=>{
-  const typed=$('station').value.trim();
-
-  showStationSuggestions();
-  renderQuickStations();
-
-  clearTimeout(stationDebounce);
-
-  if(typed.length<3){
-    $('gpsAutoState').textContent='📍 GPS wird nach Auswahl automatisch geladen.';
-    return;
-  }
-
-  stationDebounce=setTimeout(()=>{
-    const exact=stationNames().find(
-      n=>n.toLowerCase()===typed.toLowerCase()
-    );
-
-    if(exact){
-      findStationGPS(exact);
-    }
-  },700);
-});
-
+$('station').addEventListener('input',()=>{showStationSuggestions();renderQuickStations();});
+$('station').addEventListener('focus',showStationSuggestions);
+$('station').addEventListener('blur',()=>setTimeout(()=>$('stationSuggestions').style.display='none',180));
 
 
 $('trainingDate').value=localISO();
@@ -1098,73 +927,11 @@ function dashFavorites(){
 function dashExpiring(){
   osSetOverviewFilter('soon');
 }
-let allStationsMap=null;
-let allStationsLayer=null;
-let allStationsTiles=null;
-function dashMap(){ openAllStationsMap(); }
-function loadLeafletFallback(){
-  return new Promise((resolve,reject)=>{
-    if(window.L){resolve();return;}
-    const css=document.createElement('link'); css.rel='stylesheet'; css.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
-    const sc=document.createElement('script'); sc.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
-    sc.onload=()=>resolve(); sc.onerror=()=>reject(new Error('Leaflet konnte nicht geladen werden')); document.head.appendChild(sc);
-  });
+function dashMap(){
+  const s=document.getElementById('station');
+  if(s && s.value.trim()){ openSelectedOnMap(); }
+  else { dashNew(); alert('Bitte zuerst einen Bahnhof auswählen.'); }
 }
-async function openAllStationsMap(){
-  const points=items.map(it=>({it,lat:Number(it.lat),lon:Number(it.lon)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon));
-  if(!points.length){ alert('Noch keine gespeicherten Ortsschulungen mit GPS-Koordinaten vorhanden.'); return; }
-  const overlay=$('allMapOverlay');
-  overlay.classList.add('open');
-  document.body.style.overflow='hidden';
-  $('allMapInfo').textContent='⏳ Karte wird geladen …';
-  try{
-    if(!window.L) await loadLeafletFallback();
-    await new Promise(r=>setTimeout(r,180));
-    if(!allStationsMap){
-      allStationsMap=L.map('allStationsMap',{zoomControl:true,preferCanvas:true});
-      allStationsTiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        maxZoom:19, attribution:'&copy; OpenStreetMap', crossOrigin:true
-      }).addTo(allStationsMap);
-      let tileErrors=0, switched=false;
-      allStationsTiles.on('tileerror',()=>{
-        tileErrors++;
-        if(tileErrors>=3 && !switched){
-          switched=true;
-          try{ allStationsMap.removeLayer(allStationsTiles); }catch(e){}
-          allStationsTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-            subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO',crossOrigin:true
-          }).addTo(allStationsMap);
-        }
-      });
-      allStationsLayer=L.layerGroup().addTo(allStationsMap);
-    }
-    allStationsLayer.clearLayers();
-    const bounds=[];
-    points.forEach(p=>{
-      const st=statusFor(p.it);
-      const marker=L.marker([p.lat,p.lon]).addTo(allStationsLayer);
-      marker.bindPopup('<b>🚉 '+escapeHtml(p.it.station)+'</b><br>'+escapeHtml(st.label)+'<br>Gültig bis: '+fmtDate(st.expiry)+'<br><br><button onclick="openRailwayMapById('+p.it.id+')">🗺 Bahnhof öffnen</button>');
-      bounds.push([p.lat,p.lon]);
-    });
-    requestAnimationFrame(()=>{
-      allStationsMap.invalidateSize(true);
-      if(bounds.length===1) allStationsMap.setView(bounds[0],15);
-      else allStationsMap.fitBounds(bounds,{padding:[35,35],maxZoom:15});
-      setTimeout(()=>allStationsMap.invalidateSize(true),350);
-    });
-    $('allMapInfo').textContent=points.length+' Bahnhof'+(points.length===1?'':'e')+' auf der Gesamtkarte. Tippe auf einen Marker für Details.';
-  }catch(err){
-    console.error(err);
-    const first=points[0];
-    $('allStationsMap').innerHTML='<div style="padding:28px;text-align:center;color:#172033"><div style="font-size:44px">🗺️</div><b>Karte konnte im lokalen Dateimodus nicht geladen werden.</b><br><br><button class="gpsBtn mapBtn" onclick="window.open(\'https://www.openstreetmap.org/?mlat='+first.lat+'&mlon='+first.lon+'#map=15/'+first.lat+'/'+first.lon+'\',\'_blank\')">Karte im Browser öffnen</button></div>';
-    $('allMapInfo').textContent='Die gespeicherten GPS-Daten sind vorhanden. Für die Kartenansicht wird eine Internetverbindung benötigt.';
-  }
-}
-function closeAllStationsMap(){
-  $('allMapOverlay').classList.remove('open');
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('allMapOverlay')?.classList.contains('open'))closeAllStationsMap();});
 function dashBackup(){
   try{
     const payload={exportedAt:new Date().toISOString(),localStorage:{}};
@@ -1199,7 +966,7 @@ let osOverviewFilter='all';
 
 function osApplyOverviewFilter(){
   const table=document.querySelector('#overview table');
-  if(!table){ osApplyMobileCardFilter(); return; }
+  if(!table) return;
   const rows=[...table.querySelectorAll('tbody tr')];
   rows.forEach(row=>{
     const txt=row.textContent||'';
@@ -1209,7 +976,6 @@ function osApplyOverviewFilter(){
     else if(/Gültig/i.test(txt)) key='valid';
     row.style.display=(osOverviewFilter==='all'||key===osOverviewFilter)?'':'none';
   });
-  osApplyMobileCardFilter();
 }
 
 function osSetOverviewFilter(filter){
@@ -1235,71 +1001,6 @@ window.addEventListener('load',()=>{
   }
 });
 
-
-function renderMobileTrainingCards(filtered){
-  const box=$('mobileTrainingCards');
-  if(!box)return;
-  box.innerHTML=filtered.map(it=>{
-    const s=statusFor(it);
-    const gps=(it.lat&&it.lon)
-      ? `<button class="miniBtn mapBtn" style="padding:6px 8px;min-height:auto" onclick="copyCoords('${it.lat}','${it.lon}')">📍 ${escapeHtml(it.lat)}, ${escapeHtml(it.lon)}</button>`
-      : '<span>GPS nicht gespeichert</span>';
-    return `<article class="trainingCard" data-status="${s.key}">
-      <div class="trainingCardTop">
-        <div class="trainingStation">🚉 ${escapeHtml(it.station)}</div>
-        <span class="badge ${s.cls}"><i></i>${s.label}</span>
-      </div>
-      <div class="trainingMeta">
-        <div class="trainingMetaBox">
-          <div class="trainingMetaLabel">Schulungsdatum</div>
-          <div class="trainingMetaValue">${fmtDate(new Date(it.date+'T12:00:00'))}</div>
-        </div>
-        <div class="trainingMetaBox">
-          <div class="trainingMetaLabel">Gültig bis</div>
-          <div class="trainingMetaValue">${fmtDate(s.expiry)}</div>
-        </div>
-      </div>
-      <div class="trainingGps">${gps}</div>
-      <div class="trainingActions">
-        <button class="miniBtn mapBtn" onclick="openRailwayMapById(${it.id})">🗺 Karte / Navigation</button>
-        <button class="miniBtn mapBtn" onclick="createTrainingPDF(${it.id})">📄 PDF erstellen</button>
-        <button class="miniBtn renew" onclick="renew(${it.id})">✓ Erneuert</button>
-        <button class="miniBtn del" onclick="del(${it.id})">🗑 Löschen</button>
-      </div>
-    </article>`;
-  }).join('');
-  osApplyMobileCardFilter();
-}
-function osApplyMobileCardFilter(){
-  const cards=[...document.querySelectorAll('#mobileTrainingCards .trainingCard')];
-  cards.forEach(card=>{
-    card.style.display=(osOverviewFilter==='all'||card.dataset.status===osOverviewFilter)?'':'none';
-  });
-}
-
-
-function createTrainingPDF(id){
- const it=items.find(x=>x.id===id);
- if(!it){alert('Ortsschulung wurde nicht gefunden.');return;}
- const s=statusFor(it), val=v=>escapeHtml((v||'—').toString());
- const sheet=$('printTrainingSheet');
- sheet.innerHTML=`
- <h1>Nachweis Ortsschulung</h1>
- <div class="pdfSub">Ortsschulungen – SWIETELSKY / ÖBB</div>
- <div class="pdfRow"><div class="pdfLabel">Bahnhof / Betriebsstelle</div><div class="pdfValue">${val(it.station)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Schulungsdatum</div><div class="pdfValue">${fmtDate(new Date(it.date+'T12:00:00'))}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Gültig bis</div><div class="pdfValue">${fmtDate(s.expiry)} – ${val(s.label)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Schulungsinhalt / Themen</div><div class="pdfValue">${val(it.topics)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Treffpunkt</div><div class="pdfValue">${val(it.meeting)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Teilnehmerkreis</div><div class="pdfValue">${val(it.participants)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Schulungsleiter</div><div class="pdfValue">${val(it.trainer)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">Anmerkungen</div><div class="pdfValue">${val(it.notes)}</div></div>
- <div class="pdfRow"><div class="pdfLabel">GPS</div><div class="pdfValue">${it.lat&&it.lon?val(it.lat+', '+it.lon):'—'}</div></div>
- <div class="pdfFooter">Erstellt am ${fmtDate(new Date())}. Im Druckdialog „Als PDF speichern“ auswählen.</div>`;
- setTimeout(()=>window.print(),80);
-}
-
 </script>
-<section id="printTrainingSheet"></section>
 </body>
 </html>
