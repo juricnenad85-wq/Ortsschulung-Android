@@ -260,7 +260,6 @@ function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
 
 const EMAIL_SYNC_URL='https://eneusjpxcntwdkdecelc.supabase.co/functions/v1/sync-ortsschulung-reminders';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuZXVzanB4Y250d2RrZGVjZWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyOTY3MjQsImV4cCI6MjEwMjg3MjcyNH0.Wcg_EwhB5oep10fjgKLyUMsqyILssWvHe7bfmUtWzWU';
 
 function itemValidUntil(item){
   if(item && item.validUntil) return item.validUntil;
@@ -278,11 +277,7 @@ async function callEmailReminderApi(payload){
   try{
     const r=await fetch(EMAIL_SYNC_URL,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
-        'apikey':SUPABASE_ANON_KEY
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
     });
     if(!r.ok){
