@@ -44,6 +44,12 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
 .savedActions .editBtn{border-color:#9fb3c8;color:var(--navy)}
 .savedActions .renewBtn{border-color:#9ed8b0;color:#176b36;background:#f3fbf6}
 .savedActions .deleteBtn{border-color:#efb3b6;color:#a61b1b;background:#fff7f7}
+.backupActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.backupActions button{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-weight:800;background:#fff;color:var(--text)}
+.backupActions .backupBtn{border-color:#9fb3c8;color:var(--navy)}
+.backupActions .restoreBtn{border-color:#9ed8b0;color:#176b36;background:#f3fbf6}
+.backupHint{margin-top:8px}
+@media(max-width:640px){.backupActions{grid-template-columns:1fr}}
 .savedTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .validityBadge{display:inline-block;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;white-space:nowrap;line-height:1.2}
 .validityOk{background:#e8f5ec;color:#176b36}
@@ -117,6 +123,12 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
   <section class="card">
     <h2 style="margin-top:0">Gespeicherte Ortsschulungen</h2>
     <input id="savedSearch" placeholder="🔎 Bahnhof suchen...">
+    <div class="backupActions">
+      <button type="button" class="backupBtn" id="backupExport">📤 Backup erstellen</button>
+      <button type="button" class="restoreBtn" id="backupImport">📥 Backup wiederherstellen</button>
+    </div>
+    <div class="muted backupHint">Backup am besten in Google Drive, OneDrive oder an einem anderen sicheren Ort speichern.</div>
+    <input id="backupFile" type="file" accept=".json,application/json" hidden>
     <div id="savedList"></div>
   </section>
 </main>
@@ -244,6 +256,93 @@ $('navigate').addEventListener('click',()=>{
 
 function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]')}catch{return []}}
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
+
+function makeBackupData(){
+  return {
+    app:'Ortsschulung',
+    version:1,
+    exportedAt:new Date().toISOString(),
+    items:loadItems()
+  };
+}
+
+async function exportBackup(){
+  const data=makeBackupData();
+  const json=JSON.stringify(data,null,2);
+  const filename='ortsschulung-backup-'+localISO()+'.json';
+  const file=new File([json],filename,{type:'application/json'});
+
+  try{
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({
+        title:'Ortsschulung Backup',
+        text:'Backup meiner gespeicherten Ortsschulungen',
+        files:[file]
+      });
+      return;
+    }
+  }catch(err){
+    if(err && err.name==='AbortError') return;
+  }
+
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  alert('Backup wurde erstellt. Speichere die JSON-Datei an einem sicheren Ort, z. B. in Google Drive.');
+}
+
+function normalizeBackupItems(items){
+  if(!Array.isArray(items)) throw new Error('Keine gültige Backup-Liste.');
+  return items.map((x,i)=>{
+    if(!x || typeof x!=='object') throw new Error('Ungültiger Eintrag im Backup.');
+    const station=String(x.station||'').trim();
+    const date=String(x.date||'').trim();
+    if(!station || !date) throw new Error('Backup enthält einen Eintrag ohne Bahnhof oder Datum.');
+    return {
+      id:x.id ?? (Date.now()+i),
+      station,
+      date,
+      validUntil:String(x.validUntil||'').trim(),
+      lat:Number(x.lat),
+      lon:Number(x.lon),
+      participants:String(x.participants||''),
+      trainer:String(x.trainer||''),
+      notes:String(x.notes||'')
+    };
+  });
+}
+
+async function importBackupFile(file){
+  if(!file) return;
+  try{
+    const raw=await file.text();
+    const parsed=JSON.parse(raw);
+    const source=Array.isArray(parsed) ? parsed : parsed.items;
+    const items=normalizeBackupItems(source);
+
+    const msg=
+      'Backup wiederherstellen?\n\n'+
+      items.length+' Ortsschulung'+(items.length===1?'':'en')+' gefunden.\n\n'+
+      'Die aktuell auf diesem Handy gespeicherten Ortsschulungen werden dadurch ersetzt.';
+    if(!confirm(msg)) return;
+
+    saveItems(items);
+    resetEditor();
+    $('savedSearch').value='';
+    renderSaved();
+    alert('Backup erfolgreich wiederhergestellt.');
+  }catch(err){
+    alert('Backup konnte nicht gelesen werden. Bitte wähle eine gültige Ortsschulung-Backup-Datei aus.');
+  }finally{
+    $('backupFile').value='';
+  }
+}
 function validityInfo(validUntil,trainingDate){
   if(!validUntil && trainingDate){
     const d=new Date(trainingDate+'T12:00:00');
@@ -381,6 +480,9 @@ $('save').addEventListener('click',()=>{
     alert('Ortsschulung gespeichert.');
   }
 });
+$('backupExport').addEventListener('click',exportBackup);
+$('backupImport').addEventListener('click',()=>$('backupFile').click());
+$('backupFile').addEventListener('change',e=>importBackupFile(e.target.files&&e.target.files[0]));
 $('savedSearch').addEventListener('input',renderSaved);
 renderSaved();
 </script>
