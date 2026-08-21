@@ -12,14 +12,15 @@
 <style>
 :root{--navy:#15253b;--red:#e31b23;--green:#218c46;--bg:#eef2f6;--card:#fff;--text:#172033;--muted:#6d7786;--line:#d8dde5}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text)}
+html{background:#dfe5ec}
+body{background:linear-gradient(rgba(238,242,246,.72),rgba(238,242,246,.72)),url('./ortsschulung-hintergrund.png') center center / cover fixed no-repeat}
 body{padding-bottom:84px}
-  body{background-image:url('ortsschulung-hintergrund.png');background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat;}
 header{position:sticky;top:0;z-index:20;background:#fff;padding:18px 18px 14px;border-bottom:1px solid var(--line)}
 .headerRow{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:900px;margin:auto}
 h1{font-size:28px;margin:0;font-weight:900}
 main{max-width:900px;margin:auto;padding:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(21,37,59,.08)}
+.card{background:rgba(255,255,255,.92);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(21,37,59,.08)}
 label{display:block;font-size:14px;font-weight:800;margin:0 0 8px}
 input,textarea,select{width:100%;border:1px solid #cfd6df;border-radius:14px;padding:15px 16px;font:inherit;background:#fff;color:var(--text);outline:none}
 input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3px rgba(101,135,174,.15)}
@@ -38,6 +39,11 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
 .green{background:var(--green);color:white}
 .savedItem{padding:14px;border:1px solid var(--line);border-radius:14px;margin-top:10px}
 .savedItem strong{display:block}
+.savedActions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.savedActions button{border:1px solid var(--line);border-radius:10px;padding:8px 11px;font:inherit;font-size:13px;font-weight:800;background:#fff;color:var(--text)}
+.savedActions .editBtn{border-color:#9fb3c8;color:var(--navy)}
+.savedActions .renewBtn{border-color:#9ed8b0;color:#176b36;background:#f3fbf6}
+.savedActions .deleteBtn{border-color:#efb3b6;color:#a61b1b;background:#fff7f7}
 .savedTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .validityBadge{display:inline-block;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;white-space:nowrap;line-height:1.2}
 .validityOk{background:#e8f5ec;color:#176b36}
@@ -267,6 +273,60 @@ function validityInfo(validUntil,trainingDate){
   };
 }
 
+let editingId=null;
+
+function resetEditor(){
+  editingId=null;
+  $('save').textContent='✓ Ortsschulung speichern';
+}
+
+function editSaved(id){
+  const item=loadItems().find(x=>String(x.id)===String(id));
+  if(!item) return;
+  editingId=item.id;
+  $('station').value=item.station||'';
+  $('trainingDate').value=item.date||'';
+  $('lat').value=item.lat??'';
+  $('lon').value=item.lon??'';
+  $('participants').value=item.participants||'';
+  $('trainer').value=item.trainer||'';
+  $('notes').value=item.notes||'';
+  $('stationStatus').className='status ok';
+  $('stationStatus').textContent='✏️ Eintrag wird bearbeitet: '+(item.station||'');
+  $('save').textContent='✓ Änderungen speichern';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteSaved(id){
+  const items=loadItems();
+  const item=items.find(x=>String(x.id)===String(id));
+  if(!item) return;
+  if(!confirm('Ortsschulung „'+item.station+'“ wirklich löschen?')) return;
+  saveItems(items.filter(x=>String(x.id)!==String(id)));
+  if(String(editingId)===String(id)) resetEditor();
+  renderSaved();
+}
+
+function renewSaved(id){
+  const items=loadItems();
+  const i=items.findIndex(x=>String(x.id)===String(id));
+  if(i<0) return;
+  const item=items[i];
+  const today=localISO();
+  const d=new Date(today+'T12:00:00');
+  d.setFullYear(d.getFullYear()+1);
+  const newValidUntil=localISO(d);
+  if(!confirm(
+    'Ortsschulung „'+item.station+'“ verlängern?\n\n'+
+    'Neues Schulungsdatum: '+today+'\n'+
+    'Neue Gültigkeit bis: '+newValidUntil
+  )) return;
+  items[i]={...item,date:today,validUntil:newValidUntil};
+  saveItems(items);
+  renderSaved();
+  alert('Ortsschulung wurde um 1 Jahr verlängert.');
+}
+
 function renderSaved(){
   const q=norm($('savedSearch').value);
   const items=loadItems().filter(x=>!q||norm(x.station).includes(q));
@@ -281,7 +341,15 @@ function renderSaved(){
         '<span class="muted">'+escapeHtml(x.date)+' · gültig bis '+escapeHtml(x.validUntil || (function(){const z=new Date(x.date+'T12:00:00');z.setFullYear(z.getFullYear()+1);return localISO(z)})())+'</span></div>'+
         '<span class="validityBadge '+v.cls+'">'+escapeHtml(v.label)+'</span>'+
       '</div>'+
-      '<div class="muted" style="margin-top:8px">'+escapeHtml(v.detail)+'</div>';
+      '<div class="muted" style="margin-top:8px">'+escapeHtml(v.detail)+'</div>'+
+      '<div class="savedActions">'+
+        '<button type="button" class="renewBtn">🔄 Verlängern</button>'+
+        '<button type="button" class="editBtn">✏️ Bearbeiten</button>'+
+        '<button type="button" class="deleteBtn">🗑 Löschen</button>'+
+      '</div>';
+    d.querySelector('.renewBtn').addEventListener('click',()=>renewSaved(x.id));
+    d.querySelector('.editBtn').addEventListener('click',()=>editSaved(x.id));
+    d.querySelector('.deleteBtn').addEventListener('click',()=>deleteSaved(x.id));
     box.appendChild(d);
   });
 }
@@ -294,14 +362,24 @@ $('save').addEventListener('click',()=>{
   const date=$('trainingDate').value||localISO();
   const d=new Date(date+'T12:00:00'); d.setFullYear(d.getFullYear()+1);
   const item={
-    id:Date.now(),station,date,validUntil:localISO(d),lat:c.lat,lon:c.lon,
+    id:editingId??Date.now(),station,date,validUntil:localISO(d),lat:c.lat,lon:c.lon,
     participants:$('participants').value.trim(),
     trainer:$('trainer').value.trim(),
     notes:$('notes').value.trim()
   };
-  const items=loadItems(); items.unshift(item); saveItems(items);
-  renderSaved();
-  alert('Ortsschulung gespeichert.');
+  const items=loadItems();
+  if(editingId!==null){
+    const i=items.findIndex(x=>String(x.id)===String(editingId));
+    if(i>=0) items[i]=item; else items.unshift(item);
+    saveItems(items);
+    resetEditor();
+    renderSaved();
+    alert('Änderungen gespeichert.');
+  }else{
+    items.unshift(item); saveItems(items);
+    renderSaved();
+    alert('Ortsschulung gespeichert.');
+  }
 });
 $('savedSearch').addEventListener('input',renderSaved);
 renderSaved();
