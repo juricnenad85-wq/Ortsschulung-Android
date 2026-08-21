@@ -129,6 +129,7 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
     </div>
     <div class="muted backupHint">Backup am besten in Google Drive, OneDrive oder an einem anderen sicheren Ort speichern.</div>
     <div class="muted backupHint">🔔 Erinnerungen: 30 Tage, 7 Tage und am Ablauftag.</div>
+    <div class="muted backupHint">✉️ E-Mail-Erinnerungen: 30 Tage, 7 Tage und am Ablauftag.</div>
     <input id="backupFile" type="file" accept=".json,application/json" hidden>
     <div id="savedList"></div>
   </section>
@@ -257,6 +258,69 @@ $('navigate').addEventListener('click',()=>{
 
 function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]')}catch{return []}}
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
+
+const EMAIL_SYNC_URL='https://eneusjpxcntwdkdecelc.supabase.co/functions/v1/sync-ortsschulung-reminders';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuZXVzanB4Y250d2RrZGVjZWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyOTY3MjQsImV4cCI6MjEwMjg3MjcyNH0.Wcg_EwhB5oep10fjgKLyUMsqyILssWvHe7bfmUtWzWU';
+
+function itemValidUntil(item){
+  if(item && item.validUntil) return item.validUntil;
+  if(item && item.date){
+    const d=new Date(item.date+'T12:00:00');
+    if(!Number.isNaN(d.getTime())){
+      d.setFullYear(d.getFullYear()+1);
+      return localISO(d);
+    }
+  }
+  return '';
+}
+
+async function callEmailReminderApi(payload){
+  try{
+    const r=await fetch(EMAIL_SYNC_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'apikey':SUPABASE_ANON_KEY
+      },
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok){
+      console.warn('E-Mail-Erinnerung konnte nicht synchronisiert werden:',await r.text().catch(()=>''));
+      return false;
+    }
+    return true;
+  }catch(err){
+    console.warn('E-Mail-Erinnerung Netzwerkfehler:',err);
+    return false;
+  }
+}
+
+async function syncEmailReminder(item){
+  if(!item) return false;
+  const validUntil=itemValidUntil(item);
+  if(!item.station || !validUntil) return false;
+  return await callEmailReminderApi({
+    action:'upsert',
+    source_id:String(item.id),
+    station:String(item.station),
+    valid_until:validUntil
+  });
+}
+
+async function deleteEmailReminder(itemId){
+  return await callEmailReminderApi({
+    action:'delete',
+    source_id:String(itemId)
+  });
+}
+
+async function syncAllEmailReminders(){
+  for(const item of loadItems()){
+    await syncEmailReminder(item);
+  }
+}
+
 
 function getLocalNotifications(){
   try{
@@ -439,6 +503,7 @@ async function importBackupFile(file){
 
     saveItems(items);
     await syncAllReminders(true);
+    await syncAllEmailReminders();
     resetEditor();
     $('savedSearch').value='';
     renderSaved();
@@ -509,6 +574,7 @@ async function deleteSaved(id){
   if(!confirm('Ortsschulung „'+item.station+'“ wirklich löschen?')) return;
   saveItems(items.filter(x=>String(x.id)!==String(id)));
   await cancelItemReminders(id);
+  await deleteEmailReminder(id);
   if(String(editingId)===String(id)) resetEditor();
   renderSaved();
 }
@@ -530,8 +596,11 @@ async function renewSaved(id){
   items[i]={...item,date:today,validUntil:newValidUntil};
   saveItems(items);
   await scheduleItemReminders(items[i],true);
+  const emailOk=await syncEmailReminder(items[i]);
   renderSaved();
-  alert('Ortsschulung wurde um 1 Jahr verlängert. Erinnerungen wurden aktualisiert.');
+  alert(emailOk
+    ? 'Ortsschulung wurde um 1 Jahr verlängert. Handy- und E-Mail-Erinnerungen wurden aktualisiert.'
+    : 'Ortsschulung wurde verlängert. Handy-Erinnerungen wurden aktualisiert; E-Mail konnte gerade nicht synchronisiert werden.');
 }
 
 function renderSaved(){
@@ -580,14 +649,20 @@ $('save').addEventListener('click',async()=>{
     if(i>=0) items[i]=item; else items.unshift(item);
     saveItems(items);
     await scheduleItemReminders(item,true);
+    const emailOk=await syncEmailReminder(item);
     resetEditor();
     renderSaved();
-    alert('Änderungen gespeichert. Erinnerungen wurden aktualisiert.');
+    alert(emailOk
+      ? 'Änderungen gespeichert. Handy- und E-Mail-Erinnerungen wurden aktualisiert.'
+      : 'Änderungen gespeichert. Handy-Erinnerungen wurden aktualisiert; E-Mail konnte gerade nicht synchronisiert werden.');
   }else{
     items.unshift(item); saveItems(items);
     await scheduleItemReminders(item,true);
+    const emailOk=await syncEmailReminder(item);
     renderSaved();
-    alert('Ortsschulung gespeichert. Erinnerungen wurden eingerichtet.');
+    alert(emailOk
+      ? 'Ortsschulung gespeichert. Handy- und E-Mail-Erinnerungen wurden eingerichtet.'
+      : 'Ortsschulung gespeichert. Handy-Erinnerungen wurden eingerichtet; E-Mail konnte gerade nicht synchronisiert werden.');
   }
 });
 $('backupExport').addEventListener('click',exportBackup);
@@ -596,6 +671,7 @@ $('backupFile').addEventListener('change',e=>importBackupFile(e.target.files&&e.
 $('savedSearch').addEventListener('input',renderSaved);
 renderSaved();
 syncAllReminders(false);
+syncAllEmailReminders();
 </script>
 </body>
 </html>
