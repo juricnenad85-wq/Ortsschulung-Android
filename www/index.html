@@ -65,7 +65,7 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
     <h1>Ortsschulung erstellen</h1>
     <div style="text-align:right">
       <div style="font-weight:900;color:#d71920">ÖBB</div>
-      <div style="font-size:11px;color:#6d7786;margin-top:2px">Version 21.08.2026 · E-Mail Fix</div>
+      <div style="font-size:11px;color:#6d7786;margin-top:2px">Version 21.08.2026 · E-Mail Fix 2</div>
     </div>
   </div>
 </header>
@@ -263,7 +263,6 @@ function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
 
 const EMAIL_SYNC_URL='https://eneusjpxcntwdkdecelc.supabase.co/functions/v1/sync-ortsschulung-reminders';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuZXVzanB4Y250d2RrZGVjZWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyOTY3MjQsImV4cCI6MjEwMjg3MjcyNH0.Wcg_EwhB5oep10fjgKLyUMsqyILssWvHe7bfmUtWzWU';
 
 function itemValidUntil(item){
   if(item && item.validUntil) return item.validUntil;
@@ -281,10 +280,7 @@ async function callEmailReminderApi(payload){
   try{
     const r=await fetch(EMAIL_SYNC_URL,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'apikey':SUPABASE_ANON_KEY
-      },
+      headers:{'Content-Type':'text/plain;charset=UTF-8'},
       body:JSON.stringify(payload)
     });
     if(!r.ok){
