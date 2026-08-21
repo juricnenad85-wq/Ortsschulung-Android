@@ -128,6 +128,7 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
       <button type="button" class="restoreBtn" id="backupImport">📥 Backup wiederherstellen</button>
     </div>
     <div class="muted backupHint">Backup am besten in Google Drive, OneDrive oder an einem anderen sicheren Ort speichern.</div>
+    <div class="muted backupHint">🔔 Erinnerungen: 30 Tage, 7 Tage und am Ablauftag.</div>
     <input id="backupFile" type="file" accept=".json,application/json" hidden>
     <div id="savedList"></div>
   </section>
@@ -257,6 +258,110 @@ $('navigate').addEventListener('click',()=>{
 function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]')}catch{return []}}
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
 
+function getLocalNotifications(){
+  try{
+    return window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications
+      ? Capacitor.Plugins.LocalNotifications
+      : null;
+  }catch{return null}
+}
+
+function reminderId(itemId,daysBefore){
+  const s=String(itemId)+'|'+String(daysBefore);
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){
+    h^=s.charCodeAt(i);
+    h=Math.imul(h,16777619);
+  }
+  return (Math.abs(h) % 2000000000) + 1;
+}
+
+function reminderDate(validUntil,daysBefore){
+  const d=new Date(validUntil+'T09:00:00');
+  if(Number.isNaN(d.getTime())) return null;
+  d.setDate(d.getDate()-daysBefore);
+  return d;
+}
+
+async function notificationPermission(requestIfNeeded=true){
+  const LN=getLocalNotifications();
+  if(!LN) return false;
+  try{
+    const p=await LN.checkPermissions();
+    if(p.display==='granted') return true;
+    if(requestIfNeeded && p.display!=='denied'){
+      const r=await LN.requestPermissions();
+      return r.display==='granted';
+    }
+  }catch{}
+  return false;
+}
+
+async function cancelItemReminders(itemId){
+  const LN=getLocalNotifications();
+  if(!LN) return;
+  try{
+    await LN.cancel({notifications:[
+      {id:reminderId(itemId,30)},
+      {id:reminderId(itemId,7)},
+      {id:reminderId(itemId,0)}
+    ]});
+  }catch{}
+}
+
+async function scheduleItemReminders(item,requestPermission=true){
+  const LN=getLocalNotifications();
+  if(!LN || !item) return;
+  const allowed=await notificationPermission(requestPermission);
+  if(!allowed) return;
+
+  await cancelItemReminders(item.id);
+
+  let validUntil=item.validUntil;
+  if(!validUntil && item.date){
+    const d=new Date(item.date+'T12:00:00');
+    if(!Number.isNaN(d.getTime())){
+      d.setFullYear(d.getFullYear()+1);
+      validUntil=localISO(d);
+    }
+  }
+  if(!validUntil) return;
+
+  const now=new Date();
+  const reminders=[
+    {days:30,title:'Ortsschulung läuft bald ab',body:item.station+' läuft in 30 Tagen ab.'},
+    {days:7,title:'Ortsschulung läuft bald ab',body:item.station+' läuft in 7 Tagen ab.'},
+    {days:0,title:'Ortsschulung läuft heute ab',body:item.station+' läuft heute ab.'}
+  ];
+
+  const notifications=[];
+  for(const r of reminders){
+    const at=reminderDate(validUntil,r.days);
+    if(at && at.getTime()>now.getTime()){
+      notifications.push({
+        id:reminderId(item.id,r.days),
+        title:r.title,
+        body:r.body,
+        schedule:{at},
+        extra:{itemId:String(item.id),station:item.station,validUntil}
+      });
+    }
+  }
+
+  if(notifications.length){
+    try{ await LN.schedule({notifications}); }catch{}
+  }
+}
+
+async function syncAllReminders(requestPermission=false){
+  const LN=getLocalNotifications();
+  if(!LN) return;
+  const allowed=await notificationPermission(requestPermission);
+  if(!allowed) return;
+  for(const item of loadItems()) await scheduleItemReminders(item,false);
+}
+
+
 function makeBackupData(){
   return {
     app:'Ortsschulung',
@@ -333,10 +438,11 @@ async function importBackupFile(file){
     if(!confirm(msg)) return;
 
     saveItems(items);
+    await syncAllReminders(true);
     resetEditor();
     $('savedSearch').value='';
     renderSaved();
-    alert('Backup erfolgreich wiederhergestellt.');
+    alert('Backup erfolgreich wiederhergestellt. Erinnerungen wurden neu eingerichtet.');
   }catch(err){
     alert('Backup konnte nicht gelesen werden. Bitte wähle eine gültige Ortsschulung-Backup-Datei aus.');
   }finally{
@@ -396,17 +502,18 @@ function editSaved(id){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function deleteSaved(id){
+async function deleteSaved(id){
   const items=loadItems();
   const item=items.find(x=>String(x.id)===String(id));
   if(!item) return;
   if(!confirm('Ortsschulung „'+item.station+'“ wirklich löschen?')) return;
   saveItems(items.filter(x=>String(x.id)!==String(id)));
+  await cancelItemReminders(id);
   if(String(editingId)===String(id)) resetEditor();
   renderSaved();
 }
 
-function renewSaved(id){
+async function renewSaved(id){
   const items=loadItems();
   const i=items.findIndex(x=>String(x.id)===String(id));
   if(i<0) return;
@@ -422,8 +529,9 @@ function renewSaved(id){
   )) return;
   items[i]={...item,date:today,validUntil:newValidUntil};
   saveItems(items);
+  await scheduleItemReminders(items[i],true);
   renderSaved();
-  alert('Ortsschulung wurde um 1 Jahr verlängert.');
+  alert('Ortsschulung wurde um 1 Jahr verlängert. Erinnerungen wurden aktualisiert.');
 }
 
 function renderSaved(){
@@ -454,7 +562,7 @@ function renderSaved(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
-$('save').addEventListener('click',()=>{
+$('save').addEventListener('click',async()=>{
   const station=$('station').value.trim();
   const c=coords();
   if(!station||!c){alert('Bitte zuerst einen Bahnhof aus der Trefferliste auswählen.');return}
@@ -471,13 +579,15 @@ $('save').addEventListener('click',()=>{
     const i=items.findIndex(x=>String(x.id)===String(editingId));
     if(i>=0) items[i]=item; else items.unshift(item);
     saveItems(items);
+    await scheduleItemReminders(item,true);
     resetEditor();
     renderSaved();
-    alert('Änderungen gespeichert.');
+    alert('Änderungen gespeichert. Erinnerungen wurden aktualisiert.');
   }else{
     items.unshift(item); saveItems(items);
+    await scheduleItemReminders(item,true);
     renderSaved();
-    alert('Ortsschulung gespeichert.');
+    alert('Ortsschulung gespeichert. Erinnerungen wurden eingerichtet.');
   }
 });
 $('backupExport').addEventListener('click',exportBackup);
@@ -485,6 +595,7 @@ $('backupImport').addEventListener('click',()=>$('backupFile').click());
 $('backupFile').addEventListener('change',e=>importBackupFile(e.target.files&&e.target.files[0]));
 $('savedSearch').addEventListener('input',renderSaved);
 renderSaved();
+syncAllReminders(false);
 </script>
 </body>
 </html>
