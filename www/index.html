@@ -37,6 +37,11 @@ input:focus,textarea:focus,select:focus{border-color:#6587ae;box-shadow:0 0 0 3p
 .green{background:var(--green);color:white}
 .savedItem{padding:14px;border:1px solid var(--line);border-radius:14px;margin-top:10px}
 .savedItem strong{display:block}
+.savedTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.validityBadge{display:inline-block;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;white-space:nowrap;line-height:1.2}
+.validityOk{background:#e8f5ec;color:#176b36}
+.validitySoon{background:#fff4d6;color:#8a5a00}
+.validityExpired{background:#fde8e8;color:#a61b1b}
 .muted{color:var(--muted);font-size:13px}
 .footer{position:fixed;bottom:0;left:0;right:0;background:var(--navy);color:#fff;padding:12px 18px;font-size:13px;text-align:center;z-index:30}
 </style>
@@ -232,14 +237,50 @@ $('navigate').addEventListener('click',()=>{
 
 function loadItems(){try{return JSON.parse(localStorage.getItem(storageKey)||'[]')}catch{return []}}
 function saveItems(items){localStorage.setItem(storageKey,JSON.stringify(items))}
+function validityInfo(validUntil,trainingDate){
+  if(!validUntil && trainingDate){
+    const d=new Date(trainingDate+'T12:00:00');
+    if(!Number.isNaN(d.getTime())){ d.setFullYear(d.getFullYear()+1); validUntil=localISO(d); }
+  }
+  const end=new Date(validUntil+'T23:59:59');
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const days=Math.ceil((end-today)/86400000);
+
+  if(!Number.isFinite(days)) return {label:'Unbekannt',cls:'validitySoon',detail:''};
+  if(days<0) return {
+    label:'Abgelaufen',
+    cls:'validityExpired',
+    detail:'seit '+Math.abs(days)+' Tag'+(Math.abs(days)===1?'':'en')+' abgelaufen'
+  };
+  if(days===0) return {label:'Läuft heute ab',cls:'validitySoon',detail:'läuft heute ab'};
+  if(days<=30) return {
+    label:'Bald fällig',
+    cls:'validitySoon',
+    detail:'noch '+days+' Tag'+(days===1?'':'e')+' gültig'
+  };
+  return {
+    label:'Gültig',
+    cls:'validityOk',
+    detail:'noch '+days+' Tage gültig'
+  };
+}
+
 function renderSaved(){
   const q=norm($('savedSearch').value);
   const items=loadItems().filter(x=>!q||norm(x.station).includes(q));
   const box=$('savedList'); box.innerHTML='';
   if(!items.length){box.innerHTML='<div class="muted" style="padding:16px 0">Noch keine Ortsschulungen gespeichert.</div>';return}
   items.forEach(x=>{
+    const v=validityInfo(x.validUntil,x.date);
     const d=document.createElement('div'); d.className='savedItem';
-    d.innerHTML='<strong>'+escapeHtml(x.station)+'</strong><span class="muted">'+escapeHtml(x.date)+' · gültig bis '+escapeHtml(x.validUntil)+'</span>';
+    d.innerHTML=
+      '<div class="savedTop">'+
+        '<div><strong>'+escapeHtml(x.station)+'</strong>'+
+        '<span class="muted">'+escapeHtml(x.date)+' · gültig bis '+escapeHtml(x.validUntil || (function(){const z=new Date(x.date+'T12:00:00');z.setFullYear(z.getFullYear()+1);return localISO(z)})())+'</span></div>'+
+        '<span class="validityBadge '+v.cls+'">'+escapeHtml(v.label)+'</span>'+
+      '</div>'+
+      '<div class="muted" style="margin-top:8px">'+escapeHtml(v.detail)+'</div>';
     box.appendChild(d);
   });
 }
