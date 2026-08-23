@@ -33,7 +33,8 @@ jobs:
           if [ ! -d "android" ]; then
             npx cap add android
           fi
-
+- name: Aktuelle Web-App verwenden
+  run: cp www/index-android-v13.html www/index.html
       - name: Web-App nach Android synchronisieren
         run: npx cap sync android
 
