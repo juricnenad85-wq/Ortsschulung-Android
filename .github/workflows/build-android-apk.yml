@@ -13,11 +13,10 @@ jobs:
       - name: Repository laden
         uses: actions/checkout@v4
 
-      - name: Node.js einrichten
+      - name: Node.js 22 einrichten
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          
 
       - name: Java einrichten
         uses: actions/setup-java@v4
@@ -26,17 +25,38 @@ jobs:
           java-version: "21"
 
       - name: Abhängigkeiten installieren
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Android-Projekt erzeugen
         run: |
           if [ ! -d "android" ]; then
             npx cap add android
           fi
-- name: Aktuelle Web-App verwenden
-  run: cp www/index-android-v13.html www/index.html
-      - name: Web-App nach Android synchronisieren
+
+      - name: Capacitor synchronisieren
         run: npx cap sync android
+
+      - name: Richtige Web-App direkt in Android übernehmen
+        run: |
+          test -f www/index-android-v13.html
+          mkdir -p android/app/src/main/assets/public
+          cp -a www/. android/app/src/main/assets/public/
+          cp www/index-android-v13.html android/app/src/main/assets/public/index.html
+
+      - name: Prüfen ob wirklich die dunkle v13 eingebaut wird
+        run: |
+          echo "Dateigröße der Android index.html:"
+          wc -c android/app/src/main/assets/public/index.html
+          grep -q "Neue Ortsschulung" android/app/src/main/assets/public/index.html
+          grep -q "Gespeichert" android/app/src/main/assets/public/index.html
+          grep -q "Ablaufend" android/app/src/main/assets/public/index.html
+          grep -q "Profil" android/app/src/main/assets/public/index.html
+          echo "OK: v13 ist definitiv die Android-Startseite."
 
       - name: Gradle ausführbar machen
         run: chmod +x android/gradlew
@@ -48,7 +68,8 @@ jobs:
       - name: APK als Download bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Ortsschulung-Android-APK
+          name: Ortsschulung-Android-APK-v13
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
