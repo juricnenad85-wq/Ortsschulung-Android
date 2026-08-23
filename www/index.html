@@ -1392,17 +1392,17 @@ async function createTrainingPDF(id){
     };
 
     // Original form fields - positions matched to the uploaded one-page A4 template.
-    draw(item.profileName||'',145,748,155,10,true);
-    draw(item.trainer||'ÖBB',247,724,165,10,true);
+    draw(item.profileName||'',176,748,195,10,true);
+    draw(item.trainer||'ÖBB',294,724,205,10,true);
 
     // Current app workflow: Arbeitseinsatz + Ersteinweisung.
-    check(54,666);
-    check(254,666);
+    check(64,666);
+    check(308,666);
 
     // Ortskenntnis: one station per original line, max. 5 lines.
     const stations=(item.stations||[]).map(s=>s.name).filter(Boolean);
-    const stationYs=[323,303,283,263,243];
-    stations.slice(0,5).forEach((name,i)=>draw(name,45,stationYs[i],325,9.5,i===0));
+    const stationYs=[307,284,261,238,215];
+    stations.slice(0,5).forEach((name,i)=>draw(name,52,stationYs[i],390,9.5,i===0));
 
     // Signatures are drawn into the original signature areas.
     async function drawSignature(dataUrl,x,y,w,h){
@@ -1414,27 +1414,44 @@ async function createTrainingPDF(id){
         page.drawImage(img,{x:x+(w-d.width)/2,y:y+(h-d.height)/2,width:d.width,height:d.height});
       }catch(e){console.warn('Unterschrift konnte nicht eingebettet werden',e)}
     }
-    await drawSignature(item.signatureDriver,145,172,180,42);
-    await drawSignature(item.signatureTrainer,145,132,180,42);
+    await drawSignature(item.signatureDriver,178,151,180,36);
+    await drawSignature(item.signatureTrainer,178,105,180,36);
 
     // Original "Ort und Datum" fields.
-    draw(stations[0]||'',103,78,116,9.5,true);
-    draw(formatDE(item.date),231,78,116,9.5,true);
+    draw(stations[0]||'',128,57,140,9.5,true);
+    draw(formatDE(item.date),282,57,135,9.5,true);
 
     const bytes=await pdfDoc.save();
+    const fileName='Nachweis_Orts_und_Streckenkenntnis_'+String(item.date||'').replaceAll('-','')+'.pdf';
     const blob=new Blob([bytes],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);
-    const win=window.open(url,'_blank');
-    if(!win){
-      const a=document.createElement('a');
-      a.href=url;
-      a.download='Nachweis_Orts_und_Streckenkenntnis_'+String(item.date||'').replaceAll('-','')+'.pdf';
-      document.body.appendChild(a);a.click();a.remove();
+    const file=new File([blob],fileName,{type:'application/pdf'});
+
+    // Android/WebView: zuerst den nativen Teilen-/Speichern-Dialog verwenden.
+    // Das ist deutlich zuverlässiger als window.open(blob:...), das in WebViews oft blockiert wird.
+    try{
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'PDF-Nachweis',text:'Nachweis für Orts- und Streckenkenntnis'});
+        return;
+      }
+    }catch(shareErr){
+      // Abbruch durch den Benutzer ist kein PDF-Fehler; danach nichts weiter erzwingen.
+      if(shareErr && shareErr.name==='AbortError') return;
+      console.warn('Teilen nicht möglich, verwende Download-Fallback',shareErr);
     }
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+
+    // Browser-Fallback: Datei direkt herunterladen. Kein neues blob:-Fenster nötig.
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=fileName;
+    a.rel='noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
   }catch(err){
     console.error(err);
-    alert('Der Original-PDF-Nachweis konnte nicht erstellt werden.');
+    alert('PDF konnte nicht erstellt werden: '+(err && err.message ? err.message : 'Unbekannter Fehler'));
   }
 }
 function sendTrainingMail(id){
