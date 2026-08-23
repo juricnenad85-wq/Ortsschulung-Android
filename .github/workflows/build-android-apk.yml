@@ -1,3 +1,4 @@
+
 name: Android APK bauen
 
 on:
@@ -41,22 +42,37 @@ jobs:
       - name: Capacitor synchronisieren
         run: npx cap sync android
 
-      - name: Richtige Web-App direkt in Android übernehmen
+      - name: Android Standort-Berechtigungen eintragen
         run: |
-          test -f www/index-android-v13.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text(encoding="utf-8")
+          perms = [
+              '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+              '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />'
+          ]
+          missing = [x for x in perms if x not in s]
+          if missing:
+              s = s.replace("<application", "\n    " + "\n    ".join(missing) + "\n\n    <application", 1)
+              p.write_text(s, encoding="utf-8")
+          print(p.read_text(encoding="utf-8"))
+          PY
+
+      - name: GPS-Fix Web-App direkt in Android übernehmen
+        run: |
+          test -f www/index-android-v13-gps-fix.html
           mkdir -p android/app/src/main/assets/public
           cp -a www/. android/app/src/main/assets/public/
-          cp www/index-android-v13.html android/app/src/main/assets/public/index.html
+          cp www/index-android-v13-gps-fix.html android/app/src/main/assets/public/index.html
 
-      - name: Prüfen ob wirklich die dunkle v13 eingebaut wird
+      - name: Prüfen ob GPS-Fix eingebaut wird
         run: |
-          echo "Dateigröße der Android index.html:"
-          wc -c android/app/src/main/assets/public/index.html
           grep -q "Neue Ortsschulung" android/app/src/main/assets/public/index.html
-          grep -q "Gespeichert" android/app/src/main/assets/public/index.html
-          grep -q "Ablaufend" android/app/src/main/assets/public/index.html
-          grep -q "Profil" android/app/src/main/assets/public/index.html
-          echo "OK: v13 ist definitiv die Android-Startseite."
+          grep -q "GPS erfassen" android/app/src/main/assets/public/index.html
+          grep -q "Standortberechtigung" android/app/src/main/assets/public/index.html
+          grep -q "ACCESS_FINE_LOCATION" android/app/src/main/AndroidManifest.xml
+          echo "OK: GPS-Fix und Standort-Berechtigungen sind eingebaut."
 
       - name: Gradle ausführbar machen
         run: chmod +x android/gradlew
@@ -68,8 +84,7 @@ jobs:
       - name: APK als Download bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Ortsschulung-Android-APK-v13
+          name: Ortsschulung-Android-APK-GPS-FIX
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
-
