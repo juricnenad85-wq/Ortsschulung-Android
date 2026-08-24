@@ -1367,11 +1367,19 @@ function fitPdfText(text,font,maxWidth,startSize=10,minSize=6){
 async function createTrainingPDF(id){
   const item=loadItems().find(x=>String(x.id)===String(id));
   if(!item){alert('Ortsschulung wurde nicht gefunden.');return}
-  if(!window.PDFLib){
-    alert('Die PDF-Funktion konnte nicht geladen werden. Bitte Internetverbindung prüfen und nochmals versuchen.');
-    return;
-  }
+
+  // Sofort sichtbare Rückmeldung: so ist klar, dass der Button reagiert.
+  const oldTitle=document.title;
+  document.title='PDF wird erstellt…';
+  const pdfButton=[...document.querySelectorAll('#view-saved .proofActions .pdf')].find(b=>!b.disabled);
+  const oldButtonText=pdfButton?pdfButton.innerHTML:'';
+  if(pdfButton){pdfButton.disabled=true;pdfButton.style.opacity='.65';pdfButton.innerHTML='<span class="savedActionInner"><span>PDF wird erstellt…</span></span>'}
+
   try{
+    if(!window.PDFLib){
+      throw new Error('PDF-Bibliothek nicht geladen. Bitte Internetverbindung prüfen.');
+    }
+
     const {PDFDocument,StandardFonts,rgb}=PDFLib;
     const pdfDoc=await PDFDocument.load(b64ToBytes(ORIGINAL_TRAINING_PDF_BASE64));
     const page=pdfDoc.getPages()[0];
@@ -1391,20 +1399,16 @@ async function createTrainingPDF(id){
       page.drawLine({start:{x:x+6,y:y+2},end:{x:x+13,y:y+13},thickness:1.7,color:black});
     };
 
-    // Original form fields - positions matched to the uploaded one-page A4 template.
+    // Originalformular: Einträge sauber in die vorgesehenen Felder setzen.
     draw(item.profileName||'',176,748,195,10,true);
     draw(item.trainer||'ÖBB',294,724,205,10,true);
+    check(64,666);   // Arbeitseinsatz
+    check(308,666);  // Ersteinweisung
 
-    // Current app workflow: Arbeitseinsatz + Ersteinweisung.
-    check(64,666);
-    check(308,666);
-
-    // Ortskenntnis: one station per original line, max. 5 lines.
     const stations=(item.stations||[]).map(s=>s.name).filter(Boolean);
     const stationYs=[307,284,261,238,215];
     stations.slice(0,5).forEach((name,i)=>draw(name,52,stationYs[i],390,9.5,i===0));
 
-    // Signatures are drawn into the original signature areas.
     async function drawSignature(dataUrl,x,y,w,h){
       if(!dataUrl)return;
       try{
@@ -1417,29 +1421,61 @@ async function createTrainingPDF(id){
     await drawSignature(item.signatureDriver,178,151,180,36);
     await drawSignature(item.signatureTrainer,178,105,180,36);
 
-    // Original "Ort und Datum" fields.
+    // Ort und Datum – nicht mehr über die Beschriftung schreiben.
     draw(stations[0]||'',128,57,140,9.5,true);
     draw(formatDE(item.date),282,57,135,9.5,true);
 
     const bytes=await pdfDoc.save();
     const fileName='Nachweis_Orts_und_Streckenkenntnis_'+String(item.date||'').replaceAll('-','')+'.pdf';
+
+    // Uint8Array -> Base64, benötigt für Capacitor Filesystem.
+    let binary='';
+    const chunk=0x8000;
+    for(let i=0;i<bytes.length;i+=chunk){
+      binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+    }
+    const pdfBase64=btoa(binary);
+
+    // 1) Android-App / Capacitor: Datei in Cache schreiben und nativen Teilen-Dialog öffnen.
+    // Funktioniert, sobald Filesystem + Share Plugins im APK vorhanden sind.
+    try{
+      const cap=window.Capacitor;
+      const plugins=cap&&cap.Plugins;
+      const Filesystem=plugins&&plugins.Filesystem;
+      const Share=plugins&&plugins.Share;
+      if(cap && typeof cap.isNativePlatform==='function' && cap.isNativePlatform() && Filesystem && Share){
+        const result=await Filesystem.writeFile({
+          path:fileName,
+          data:pdfBase64,
+          directory:'CACHE',
+          recursive:true
+        });
+        await Share.share({
+          title:'PDF-Nachweis',
+          text:'Nachweis für Orts- und Streckenkenntnis',
+          url:result.uri,
+          dialogTitle:'PDF teilen oder speichern'
+        });
+        return;
+      }
+    }catch(nativeErr){
+      console.warn('Capacitor PDF-Teilen nicht möglich',nativeErr);
+    }
+
+    // 2) Web Share API mit Datei, falls der WebView/Browser dies unterstützt.
     const blob=new Blob([bytes],{type:'application/pdf'});
     const file=new File([blob],fileName,{type:'application/pdf'});
-
-    // Android/WebView: zuerst den nativen Teilen-/Speichern-Dialog verwenden.
-    // Das ist deutlich zuverlässiger als window.open(blob:...), das in WebViews oft blockiert wird.
     try{
-      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
         await navigator.share({files:[file],title:'PDF-Nachweis',text:'Nachweis für Orts- und Streckenkenntnis'});
         return;
       }
     }catch(shareErr){
-      // Abbruch durch den Benutzer ist kein PDF-Fehler; danach nichts weiter erzwingen.
       if(shareErr && shareErr.name==='AbortError') return;
-      console.warn('Teilen nicht möglich, verwende Download-Fallback',shareErr);
+      console.warn('Web Share nicht möglich',shareErr);
     }
 
-    // Browser-Fallback: Datei direkt herunterladen. Kein neues blob:-Fenster nötig.
+    // 3) Browser-Download-Fallback.
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
@@ -1448,10 +1484,18 @@ async function createTrainingPDF(id){
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),10000);
+
+    // Wenn ein Android-WebView Downloads ignoriert, zusätzlich versuchen die Datei zu öffnen.
+    setTimeout(()=>{
+      try{ if(document.visibilityState==='visible') window.location.href=url; }catch(e){}
+    },350);
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
   }catch(err){
     console.error(err);
-    alert('PDF konnte nicht erstellt werden: '+(err && err.message ? err.message : 'Unbekannter Fehler'));
+    alert('PDF konnte nicht erstellt/geöffnet werden: '+(err&&err.message?err.message:'Unbekannter Fehler'));
+  }finally{
+    document.title=oldTitle;
+    if(pdfButton){pdfButton.disabled=false;pdfButton.style.opacity='';pdfButton.innerHTML=oldButtonText}
   }
 }
 function sendTrainingMail(id){
