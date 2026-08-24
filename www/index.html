@@ -97,7 +97,7 @@ button{cursor:pointer}
 .pageIntro{margin:2px 2px 14px;padding:12px 14px;border-radius:16px;background:rgba(21,37,59,.82);color:#fff;backdrop-filter:blur(8px)}
 .pageIntro strong{display:block;font-size:18px}
 .pageIntro span{font-size:12px;opacity:.82}
-.bottomNav{position:fixed;left:0;right:0;bottom:0;z-index:80;background:rgba(255,255,255,.96);border-top:1px solid rgba(198,205,214,.95);display:grid;grid-template-columns:repeat(4,1fr);padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));box-shadow:0 -8px 24px rgba(21,37,59,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.bottomNav{position:fixed;left:0;right:0;bottom:0;z-index:80;background:rgba(255,255,255,.96);border-top:1px solid rgba(198,205,214,.95);display:grid;grid-template-columns:repeat(5,1fr);padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));box-shadow:0 -8px 24px rgba(21,37,59,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .navBtn{border:0;background:transparent;color:#6f7885;border-radius:13px;padding:7px 3px 6px;font:inherit;font-size:10px;font-weight:850;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
 .navBtn .navIcon{font-size:21px;line-height:1}
 .navBtn.active{color:var(--navy);background:#eef3f8}
@@ -983,12 +983,26 @@ input:focus,textarea:focus,select:focus{border-color:#4da0ff!important;box-shado
       </div>
     </section>
   </section>
+
+  <section id="view-bsb" class="appView">
+    <div class="sectionHero">
+      <div class="sectionHeroLeft">
+        <div class="sectionHeroIcon">📄</div>
+        <div><div class="sectionHeroTitle">BSB &amp; Lageskizzen</div><div class="sectionHeroSub">BSB-ZIP laden und PDFs direkt in der App ansehen</div></div>
+      </div>
+    </div>
+    <section class="card" style="padding:0;overflow:hidden">
+      <iframe id="bsbViewerFrame" src="./bsb-lageskizzen-viewer.html" title="BSB &amp; Lageskizzen" style="display:block;width:100%;height:calc(100vh - 230px);min-height:560px;border:0;background:#101923"></iframe>
+    </section>
+  </section>
+
 </main>
 
 <nav class="bottomNav" aria-label="Hauptmenü">
   <button type="button" class="navBtn active" data-view="create"><span class="navIconWrap"><span class="navIcon"><svg class="uiIcon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></span><span>Erstellen</span></button>
   <button type="button" class="navBtn" data-view="saved"><span class="navIconWrap"><span class="navIcon"><svg class="uiIcon" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span></span><span>Gespeichert</span></button>
   <button type="button" class="navBtn" data-view="expiring"><span class="navIconWrap"><span class="navIcon"><svg class="uiIcon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M7 2 4 5M17 2l3 3"/></svg></span><span id="expiryBadge" class="navBadge">0</span></span><span>Ablaufend</span></button>
+  <button type="button" class="navBtn" data-view="bsb"><span class="navIconWrap"><span class="navIcon"><svg class="uiIcon" viewBox="0 0 24 24"><path d="M6 2.5h8l4 4V21H6z"/><path d="M14 2.5V7h4M8.5 12h7M8.5 15h7M8.5 18h4"/></svg></span></span><span>BSB</span></button>
   <button type="button" class="navBtn" data-view="profile"><span class="navIconWrap"><span class="navIcon"><svg class="uiIcon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22c1-5 3.7-8 8-8s7 3 8 8"/></svg></span></span><span>Profil</span></button>
 </nav>
 <section id="printTrainingSheet"></section>
@@ -1007,6 +1021,7 @@ const VIEW_META={
   create:['Neue Ortsschulung','Mehrere Bahnhöfe an einem Datum'],
   saved:['Gespeicherte','Alle Ortsschulungen und Nachweise'],
   expiring:['Ablaufend','Fälligkeiten und Verlängerungen'],
+  bsb:['BSB & Lageskizzen','Dokumente direkt in der App'],
   profile:['Mein Profil','Name, E-Mail und Backup']
 };
 function showView(name){
