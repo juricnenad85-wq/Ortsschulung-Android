@@ -2,7 +2,7 @@
   "name": "ortsschulung-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Ortsschulung Android App \u2013 SWIETELSKY / \u00d6BB",
+  "description": "Ortsschulung Android App – SWIETELSKY / ÖBB",
   "scripts": {
     "android:add": "npx cap add android",
     "sync": "npx cap sync android",
@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
-    "@capacitor/core": "^8.4.0", 
-    "@capacitor/local-notifications": "^8.0.0"
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0"
