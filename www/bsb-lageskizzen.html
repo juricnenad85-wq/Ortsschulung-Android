@@ -344,13 +344,18 @@
           button.textContent = "Öffne ...";
 
           try {
-            const blob =
-              await item.entry.async("blob");
+          const pdfData =
+  await item.entry.async("arraybuffer");
 
-            const url =
-              URL.createObjectURL(blob);
+const pdfBlob = new Blob(
+  [pdfData],
+  { type: "application/pdf" }
+);
 
-            window.open(url, "_blank");
+const url =
+  URL.createObjectURL(pdfBlob);
+
+window.open(url, "_blank");
 
             setTimeout(() => {
               URL.revokeObjectURL(url);
