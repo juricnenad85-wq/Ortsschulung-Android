@@ -64,7 +64,7 @@ jobs:
           test -f www/index-android-v13-gps-fix.html
           mkdir -p android/app/src/main/assets/public
           cp -a www/. android/app/src/main/assets/public/
-          cp www/index.html android/app/src/main/assets/public/index.html
+          cp www/index-notifications-fix.html android/app/src/main/assets/public/index.html
 
       - name: Prüfen ob GPS-Fix eingebaut wird
         run: |
